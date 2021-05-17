@@ -126,5 +126,19 @@ namespace dss_credito_bancario_backend.Controllers
 
         }
 
+        [HttpPost]
+        [Route("nuevo")]
+        public async Task<ActionResult<Cliente>> NuevoCliente([FromBody]Cliente cliente){
+            var clientExists = await this.Db.Clientes.FirstOrDefaultAsync(cl => 
+                    cl.Curp == cliente.Curp
+                );
+            if(clientExists != null) return BadRequest(new {
+                msg = $"La CURP {clientExists.Curp} ya existe en el sistema."
+            });
+            var result = await this.Db.AddAsync(cliente);
+            await this.Db.SaveChangesAsync();
+            return Ok(result.Entity);
+        }
+
     }
 }
