@@ -7,6 +7,7 @@ using dss_credito_bancario_backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using dss_credito_bancario_backend.Models;
 
 namespace dss_credito_bancario_backend.Controllers
 {
@@ -19,6 +20,13 @@ namespace dss_credito_bancario_backend.Controllers
         public ClientesController(bancarioContext db)
         {
             Db = db;
+        }
+
+        public double GetTasa(int meses){
+            if(meses == 12) return 55;
+            if(meses == 6) return 27.5;
+            if(meses == 3) return 17.75;
+            return 0;
         }
 
         private async Task<(Solicitude solicitud, decimal? ingresoAcumulable)> ObtenerSugerido(int porcentaje, Cliente cliente, Solicitude solicitud){
@@ -138,6 +146,44 @@ namespace dss_credito_bancario_backend.Controllers
             var result = await this.Db.AddAsync(cliente);
             await this.Db.SaveChangesAsync();
             return Ok(result.Entity);
+        }
+
+        public (decimal Total, decimal Mensualidad) CalculateEjecution(int meses, decimal limite){
+            var tasa = Convert.ToDecimal( this.GetTasa(meses) );
+            decimal totally = limite + (limite * tasa / 100);
+            decimal mensuality = totally / meses;
+            return (totally,mensuality);
+        }
+
+        [HttpPost]
+        [Route("prueba/{idCliente}")]
+        public async Task<ActionResult<object>> EjecutarPrueba([FromRoute]string curp, [FromBody]EjecucionData data){
+            var cliente = await this.Db.Clientes.FirstOrDefaultAsync(cl => 
+                cl.Curp == curp
+            );
+            var tarjeta = await this.Db.TarjetasCreditos.FirstOrDefaultAsync(tar => 
+                tar.Id == data.TarjetaId
+            );
+
+            if(tarjeta == null){
+                return BadRequest(new {
+                    msg = $"No se encontro la tarjeta solicitada."
+                });
+            }
+
+            if(cliente == null){
+                return BadRequest(new {
+                    msg = $"No se encontro la curp {curp} en el sistema."
+                });
+            }
+
+            // Logica de ejecucion.
+            
+            var (Total, Mensualidad) = CalculateEjecution(data.Meses, tarjeta.LimiteCredito??0);
+            return Ok(new {
+                Total,
+                Mensualidad
+            });
         }
 
     }
