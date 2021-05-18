@@ -152,11 +152,11 @@ namespace dss_credito_bancario_backend.Controllers
             var tasa = Convert.ToDecimal( this.GetTasa(meses) );
             decimal totally = limite + (limite * tasa / 100);
             decimal mensuality = totally / meses;
-            return (totally,mensuality);
+            return ( Math.Round(totally, 2), Math.Round(mensuality, 2) );
         }
 
         [HttpPost]
-        [Route("prueba/{idCliente}")]
+        [Route("prueba/{curp}")]
         public async Task<ActionResult<object>> EjecutarPrueba([FromRoute]string curp, [FromBody]EjecucionData data){
             var cliente = await this.Db.Clientes.FirstOrDefaultAsync(cl => 
                 cl.Curp == curp
