@@ -28,8 +28,10 @@ namespace dss_credito_bancario_backend
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
+
             services.AddDbContext<bancarioContext>(options => 
-                options.UseSqlServer(Configuration.GetConnectionString("bancarioV2"))
+                options.UseSqlServer(Configuration.GetConnectionString("bancarioV3"))
             );
             services.AddControllers().AddNewtonsoftJson(opt =>
                 opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
@@ -43,6 +45,12 @@ namespace dss_credito_bancario_backend
             {
                 app.UseDeveloperExceptionPage();
             }
+            // global cors policy
+            app.UseCors(x => x
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .SetIsOriginAllowed(origin => true) // allow any origin
+                .AllowCredentials()); // allow credentials
 
             app.UseHttpsRedirection();
 
